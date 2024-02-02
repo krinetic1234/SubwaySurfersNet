@@ -314,8 +314,9 @@ def main():
 
     # Model (MoveNet Lightning), use pre-trained model from TensorFlow Hub
     input_size = 192
-    model = hub.load("https://www.kaggle.com/models/google/movenet/frameworks/TensorFlow2/variations/singlepose-lightning/versions/4")
-    movenet = model.signatures['serving_default']
+    model_url = "https://tfhub.dev/google/movenet/singlepose/lightning/4"
+    model_load = hub.load(model_url)
+    model = model_load.signatures["serving_default"]
 
     # Enable Keypress
     enable_keypress = True
@@ -340,7 +341,7 @@ def main():
         frame = cv.flip(frame, 1)
 
         # Run inference
-        keypoints, scores = run_inference(movenet, input_size, frame)
+        keypoints, scores = run_inference(model, input_size, frame)
 
         # Copy frame
         frame_copy = copy.deepcopy(frame)
