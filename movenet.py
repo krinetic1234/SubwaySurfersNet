@@ -1,4 +1,7 @@
 import os
+import pickle
+from pathlib import Path
+
 import cv2
 import numpy as np
 import tensorflow as tf
@@ -182,9 +185,7 @@ def _keypoints_and_edges_for_display(keypoints_with_scores,
         edges_xy = np.stack(keypoint_edges_all, axis=0)
     else:
         edges_xy = np.zeros((0, 2, 2))
-        
     if torso_centroid is not None:
-        print(keypoints_xy.shape, torso_centroid.shape)
         keypoints_xy = np.concatenate([keypoints_xy, ([width, height] * torso_centroid[::-1])[np.newaxis]])
     return keypoints_xy, edges_xy, edge_colors
 
@@ -273,27 +274,27 @@ def get_torso_centroid(pose, keypoint_threshold=0.11):
         return None
     return np.mean(np.stack(torso_joints), axis=0)
     
+if __name__ == "__main__":
+    # Open the default camera
+    cap = cv2.VideoCapture(0)
 
-# Open the default camera
-cap = cv2.VideoCapture(0)
+    while True:
+        # Read a frame from the camera
+        ret, frame = cap.read()
+        
+        # Display the frame
+        frame = cv2.resize(frame, (input_size, input_size))
+        pose = movenet(tf.expand_dims(frame, axis=0))
+        
+        torso_centroid = get_torso_centroid(pose)
+        frame = draw_prediction_on_image(frame, pose, torso_centroid=torso_centroid)
+        
+        cv2.imshow('Camera', frame)
 
-while True:
-    # Read a frame from the camera
-    ret, frame = cap.read()
-    
-    # Display the frame
-    frame = cv2.resize(frame, (input_size, input_size))
-    pose = movenet(tf.expand_dims(frame, axis=0))
-    
-    torso_centroid = get_torso_centroid(pose)
-    frame = draw_prediction_on_image(frame, pose, torso_centroid=torso_centroid)
-    
-    cv2.imshow('Camera', frame)
+        # Break the loop if 'q' is pressed
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    # Break the loop if 'q' is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# Release the camera and close the window
-cap.release()
-cv2.destroyAllWindows()
+    # Release the camera and close the window
+    cap.release()
+    cv2.destroyAllWindows()
